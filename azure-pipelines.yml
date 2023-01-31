@@ -10,8 +10,9 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  veracodeAppProfile: AzDevOps.$(Build.DefinitionName)
-  caminhoPacote: target/verademo.war
+- group: Veracode
+- name: caminhoPacote
+  value: target/verademo.war
 
 steps:
 - task: Maven@3
@@ -25,6 +26,14 @@ steps:
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
     goals: 'package'
 
+- task: CmdLine@2
+  inputs:
+    script: |
+      export SRCCLR_SCM_NAME=$(veracodeAppProfile)
+      curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty
+  displayName: 'Veracode SCA'
+  continueOnError: true
+
 - script: |
     curl -O -L https://downloads.veracode.com/securityscan/pipeline-scan-LATEST.zip
   displayName: 'Download Pipeline Scanner'
@@ -37,42 +46,30 @@ steps:
       java -jar $(Build.ArtifactStagingDirectory)/pipeline-scan.jar -vid $(APIID) -vkey $(APIKEY) --file '$(caminhoPacote)' --issue_details true 
   displayName: 'Veracode PipelineScan'
   continueOnError: true
-
-- task: CmdLine@2
-  inputs:
-    script: |
-      export SRCCLR_SCM_NAME=$(veracodeAppProfile)
-      curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty
-  displayName: 'Veracode SCA'
-  continueOnError: true
   
 - task: Veracode@3
   inputs:
-    ConnectionDetailsSelection: 'Credentials'
-    apiId: '$(APIID)'
-    apiKey: '$(APIKEY)'
+    ConnectionDetailsSelection: 'Endpoint'
+    AnalysisService: 'veracode-evento'
     veracodeAppProfile: '$(veracodeAppProfile)'
     version: '$(build.buildNumber)'
     filepath: '$(caminhoPacote)'
-    createSandBox: false
     createProfile: true
-    failTheBuildIfVeracodeScanDidNotInitiate: false
-    scanStatusCheckInterval: '60'
     importResults: true
-    failBuildOnPolicyFail: false
+    maximumWaitTime: '360'
   displayName: 'Veracode SAST'
 
 - task: Veracode Flaw Importer@3
   inputs:
-    ConnectionDetailsSelection: 'Credentials'
-    apiId: '$(APIID)'
-    apiKey: '$(APIKEY)'
+    ConnectionDetailsSelection: 'Endpoint'
+    AnalysisService: 'veracode-evento'
     veracodeAppProfile: '$(veracodeAppProfile)'
     sandboxName: 
-    importType: 'All Flaws'
+    scanType: 'Dynamic, Static, and Software Composition Analysis'
+    importType: 'All Unmitigated Flaws Violating Policy'
     workItemType: 'Issue'
     area: '$(system.teamProject)'
-    addCustomTag: '$(build.buildNumber)'
+    overwriteAreaPathInWorkItemsOnImport: true
     flawImportLimit: '1000'
   displayName: 'Veracode importando falhas'
 
