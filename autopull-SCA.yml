@@ -20,6 +20,8 @@ stages:
           export SRCCLR_SCM_NAME=$(veracodeAppProfile)
           export SRCCLR_SCM_TYPE="GITHUB"
           export SRCCLR_SCM_TOKEN="$(tokenGitHub)"
+          git config --global user.email "$(emailGit)"
+          git config --global user.name "$(nomeGit)"
           curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --pull-request --allow-dirty
       displayName: 'Veracode SCA'
       continueOnError: true
