@@ -20,6 +20,7 @@ stages:
           export SRCCLR_SCM_NAME=$(veracodeAppProfile)
           export SRCCLR_SCM_TYPE="GITHUB"
           export SRCCLR_SCM_TOKEN="$(tokenGitHub)"
+          export SRCCLR_SCM_URI="https://github.com/IGDEXE/Verademo"
           curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty
       displayName: 'Veracode SCA'
       continueOnError: true
