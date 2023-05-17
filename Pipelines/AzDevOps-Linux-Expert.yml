@@ -11,7 +11,7 @@ variables:
 
 stages:
 - stage: Build
-  displayName: Build and SCA
+  displayName: Build
   jobs:
   - job: Build
     steps: 
@@ -32,6 +32,9 @@ stages:
         ArtifactName: 'drop'
         publishLocation: 'Container'
     
+- stage: SCA
+  displayName: SCA
+  jobs:
   - job: SCA
     displayName: 'Veracode SCA'
     steps:
@@ -41,7 +44,7 @@ stages:
           curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty
       displayName: 'Resultados SCA'
       continueOnError: true
-  
+        
 - stage: SAST
   displayName: U&S and Pipeline Scan
   dependsOn: Build
