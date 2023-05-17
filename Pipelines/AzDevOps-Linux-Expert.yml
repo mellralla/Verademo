@@ -1,6 +1,3 @@
-# Para testar, recomendo a utilização do projeto NodeGoat
-# Disponivel em: https://github.com/IGDEXE/NodeGoat
-
 trigger:
 - master
 
@@ -8,8 +5,9 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  veracodeAppProfile: AzDevOps.$(Build.DefinitionName)
-  caminhoPacote: $(System.ArtifactsDirectory)/drop/verademo.war
+- group: Veracode
+- name: caminhoPacote
+  value: target/verademo.war
 
 stages:
 - stage: Build
