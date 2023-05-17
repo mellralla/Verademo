@@ -34,6 +34,7 @@ stages:
     
 - stage: SCA
   displayName: SCA
+  dependsOn:
   jobs:
   - job: SCA
     displayName: 'Veracode SCA'
