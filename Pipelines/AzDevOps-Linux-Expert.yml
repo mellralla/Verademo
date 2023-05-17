@@ -7,7 +7,7 @@ pool:
 variables:
 - group: Veracode
 - name: caminhoPacote
-  value: target/verademo.war
+  value: $(System.ArtifactsDirectory)/drop/verademo.war
 
 stages:
 - stage: Build
