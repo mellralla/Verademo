@@ -47,7 +47,7 @@ stages:
       continueOnError: true
         
 - stage: SAST
-  displayName: U&S and Pipeline Scan
+  displayName: Pipeline Scan
   dependsOn: Build
   jobs:
   - job: PipelineScan
