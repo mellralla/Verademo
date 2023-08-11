@@ -37,7 +37,7 @@ stages:
   dependsOn:
   jobs:
   - job: SCA
-    displayName: 'Veracode SCA'
+    displayName: 'Veracode SCA - Terminal'
     steps:
     - task: CmdLine@2
       inputs:
@@ -46,6 +46,17 @@ stages:
           curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty --quick --scan-collectors "mvn"
       displayName: 'Resultados SCA'
       continueOnError: true
+  - job: SCAPS
+    displayName: 'Veracode SCA - Powershell'
+    steps:
+      - task: PowerShell@2
+        inputs:
+          targetType: 'inline'
+          script: |
+            $JAVA_OPTS="-Xms8g -Xmx8g"
+            curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty --quick --scan-collectors "mvn"
+        displayName: 'Resultados SCA'
+        continueOnError: true
         
 - stage: SAST
   displayName: Pipeline Scan
