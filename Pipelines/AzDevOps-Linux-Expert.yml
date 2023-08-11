@@ -42,7 +42,8 @@ stages:
     - task: CmdLine@2
       inputs:
         script: |
-          curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty
+          JAVA_OPTS="-Xms8g -Xmx8g"
+          curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty --quick --scan-collectors "mvn"
       displayName: 'Resultados SCA'
       continueOnError: true
         
