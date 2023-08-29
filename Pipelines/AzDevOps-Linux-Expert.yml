@@ -37,29 +37,39 @@ stages:
   dependsOn:
   jobs:
   - job: SCA
-    displayName: 'Veracode SCA - Terminal'
+    displayName: 'Veracode SCA'
     steps:
     - task: CmdLine@2
       inputs:
         script: |
-          JAVA_OPTS="-Xms8g -Xmx8g"
-          curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty --quick --scan-collectors "mvn"
+          curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty
       displayName: 'Resultados SCA'
       continueOnError: true
-  - job: SCAPS
-    displayName: 'Veracode SCA - Powershell'
+    
+- stage: IaC
+  displayName: IaC
+  dependsOn:
+  jobs:
+  - job: IaC
+    displayName: 'Veracode IaC'
     steps:
-      - task: PowerShell@2
-        inputs:
-          targetType: 'inline'
-          script: |
-            $JAVA_OPTS="-Xms8g -Xmx8g"
-            curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty --quick --scan-collectors "mvn"
-        displayName: 'Resultados SCA'
-        continueOnError: true
-        
+    - script: |
+        curl -fsS https://tools.veracode.com/veracode-cli/install | sh
+      displayName: 'Configuração inicial'
+
+    - task: CmdLine@2
+      inputs:
+        script: './veracode scan --type directory --source ./terraform/ --format table'
+      displayName: 'Scan'
+
+    - task: CmdLine@2
+      inputs:
+        script: './veracode sbom --type repo --source https://github.com/IGDEXE/Terragoat --format table'
+      displayName: 'SBOM - Repo'
+      continueOnError: true
+  
 - stage: SAST
-  displayName: Pipeline Scan
+  displayName: U&S and Pipeline Scan
   dependsOn: Build
   jobs:
   - job: PipelineScan
@@ -81,7 +91,7 @@ stages:
         destinationFolder: '$(Build.ArtifactStagingDirectory)'
         cleanDestinationFolder: false
     - script: |
-          java -jar $(Build.ArtifactStagingDirectory)/pipeline-scan.jar -vid $(VeracodeID) -vkey $(VeracodeKey) --file '$(caminhoPacote)' --issue_details true 
+          java -jar $(Build.ArtifactStagingDirectory)/pipeline-scan.jar -vid $(VERACODE_API_KEY_ID) -vkey $(VERACODE_API_KEY_SECRET) --file '$(caminhoPacote)' --issue_details true 
       displayName: 'Veracode PipelineScan'
       continueOnError: true
       
@@ -98,8 +108,8 @@ stages:
     - task: Veracode@3
       inputs:
         ConnectionDetailsSelection: 'Credentials'
-        apiId: '$(VeracodeID)'
-        apiKey: '$(VeracodeKey)'
+        apiId: '$(VERACODE_API_KEY_ID)'
+        apiKey: '$(VERACODE_API_KEY_SECRET)'
         veracodeAppProfile: '$(veracodeAppProfile)'
         version: '$(build.buildNumber)'
         filepath: '$(caminhoPacote)'
