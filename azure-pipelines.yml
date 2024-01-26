@@ -1,15 +1,12 @@
-# Maven
-# Build your Java project and run tests with Apache Maven.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+trigger:
+- master
 
 pool:
   vmImage: ubuntu-latest
 
 variables:
-- group: Veracode
-- name: caminhoPacote
-  value: target/verademo.war
+  veracodeAppProfile: AzDevOps.$(Build.DefinitionName)
+  caminhoPacote: target/verademo.war
 
 steps:
 - task: Maven@3
@@ -23,14 +20,6 @@ steps:
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
     goals: 'package'
 
-- task: CmdLine@2
-  inputs:
-    script: |
-      export SRCCLR_SCM_NAME=$(veracodeAppProfile)
-      curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty
-  displayName: 'Veracode SCA'
-  continueOnError: true
-
 - script: |
     curl -O -L https://downloads.veracode.com/securityscan/pipeline-scan-LATEST.zip
   displayName: 'Download Pipeline Scanner'
@@ -43,36 +32,41 @@ steps:
       java -jar $(Build.ArtifactStagingDirectory)/pipeline-scan.jar -vid $(APIID) -vkey $(APIKEY) --file '$(caminhoPacote)' --issue_details true 
   displayName: 'Veracode PipelineScan'
   continueOnError: true
+
+- task: CmdLine@2
+  inputs:
+    script: |
+      export SRCCLR_SCM_NAME=$(veracodeAppProfile)
+      curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty
+  displayName: 'Veracode SCA'
+  continueOnError: true
   
 - task: Veracode@3
   inputs:
-    ConnectionDetailsSelection: 'Endpoint'
-    AnalysisService: 'veracode-evento'
+    ConnectionDetailsSelection: 'Credentials'
+    apiId: '$(APIID)'
+    apiKey: '$(APIKEY)'
     veracodeAppProfile: '$(veracodeAppProfile)'
     version: '$(build.buildNumber)'
     filepath: '$(caminhoPacote)'
+    createSandBox: false
     createProfile: true
+    failTheBuildIfVeracodeScanDidNotInitiate: false
+    scanStatusCheckInterval: '60'
     importResults: true
-    maximumWaitTime: '360'
+    failBuildOnPolicyFail: false
   displayName: 'Veracode SAST'
 
 - task: Veracode Flaw Importer@3
   inputs:
-    ConnectionDetailsSelection: 'Endpoint'
-    AnalysisService: 'veracode-evento'
+    ConnectionDetailsSelection: 'Credentials'
+    apiId: '$(APIID)'
+    apiKey: '$(APIKEY)'
     veracodeAppProfile: '$(veracodeAppProfile)'
     sandboxName: 
-    scanType: 'Dynamic, Static, and Software Composition Analysis'
-    importType: 'All Unmitigated Flaws Violating Policy'
+    importType: 'All Flaws'
     workItemType: 'Issue'
     area: '$(system.teamProject)'
-    overwriteAreaPathInWorkItemsOnImport: true
+    addCustomTag: '$(build.buildNumber)'
     flawImportLimit: '1000'
   displayName: 'Veracode importando falhas'
-
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(caminhoPacote)'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
-  displayName: 'Publica o artefato'
