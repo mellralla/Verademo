@@ -5,7 +5,7 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  veracodeAppProfile: AzDevOps.$(Build.DefinitionName)
+  veracodeAppProfile: $(Build.DefinitionName)
   caminhoPacote: target/verademo.war
 
 steps:
@@ -70,12 +70,3 @@ steps:
     addCustomTag: '$(build.buildNumber)'
     flawImportLimit: '1000'
   displayName: 'Veracode importando falhas'
-
-- task: Veracode@3
-  inputs:
-    ConnectionDetailsSelection: 'Service Connection'
-    AnalysisService: 'Veracode'
-    veracodeAppProfile: 'VeracodeDemo'
-    version: '$(build.buildNumber)'
-    filepath: '$(build.artifactstagingdirectory)'
-    maximumWaitTime: '360'
