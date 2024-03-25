@@ -36,7 +36,7 @@ steps:
 - task: CmdLine@2
   inputs:
     script: |
-      export SRCCLR_SCM_NAME=$(veracodeAppProfile)
+      set SRCCLR_API_TOKEN=$(SRCCLR_API_TOKEN)
       curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan –-update-advisor --allow-dirty 
   displayName: 'Veracode SCA'
   continueOnError: true
